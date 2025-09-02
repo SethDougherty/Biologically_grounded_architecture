@@ -1,0 +1,32 @@
+#!/bin/bash -l
+#SBATCH -N 1                        # Single node
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=32
+#SBATCH --exclusive
+#SBATCH -t 00:30:00
+#SBATCH -J cnn_backwardpass
+#SBATCH -q regular
+#SBATCH -C gpu
+#SBATCH -A m2043_g
+#SBATCH --image=nersc/pytorch:ngc-22.09-v0
+#SBATCH -o /pscratch/sd/s/sdough/tmp_neuInv/slurm_logs/weight_update-%j.out
+
+echo "Starting weight update..."
+
+# Load modules or conda env if needed
+# source ~/.bashrc
+# conda activate 
+
+MODEL_PATH=$1
+CHECKPOINT_DIR=$2
+ERROR_CSV=$3
+STATE_DIR=$4
+
+srun -n1 shifter python3 -u weight_updater.py \
+  --model_dir "$MODEL_PATH" \
+  --checkpoint_dir "$CHECKPOINT_DIR" \
+  --state_dir "$STATE_DIR" \
+  --error_csv "$ERROR_CSV"  
+
+echo "Finished weight update."

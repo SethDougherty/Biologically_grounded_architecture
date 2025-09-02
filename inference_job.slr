@@ -1,0 +1,46 @@
+#!/bin/bash -l
+#SBATCH -N 1                      # Single node
+#SBATCH --ntasks-per-node=4
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=32
+#SBATCH --exclusive
+#SBATCH -t 00:30:00
+#SBATCH -J cnn_infer
+#SBATCH -q debug
+#SBATCH -C gpu
+#SBATCH -A m2043_g
+#SBATCH --image=nersc/pytorch:ngc-22.09-v0
+#SBATCH -o /pscratch/sd/s/sdough/tmp_neuInv/slurm_logs/infer-%j.out
+
+# =================== USER ARGS =====================
+MODEL_PATH=$1   
+CHECKPOINT_PATH=$2 
+OUTPUT_CSV=$3
+CELL_NAME=$4
+
+if [[ -z "$MODEL_PATH" || -z "$OUTPUT_CSV" ]]; then
+    echo "Usage: sbatch inference_job.slr <model_path> <checkpoint_path> <output_csv> <cell_name>"
+    exit 1
+fi
+
+echo "=== CNN Inference ==="
+echo "MODEL: $MODEL_PATH"
+echo "Output: $OUTPUT_CSV"
+echo "Job ID: $SLURM_JOB_ID"
+echo "Start: $(date)"
+
+# =================== RUN ==========================
+
+export MASTER_ADDR=$(hostname)
+export MASTER_PORT=23456
+
+export PYTHONPATH="/pscratch/sd/s/sdough/Neuron_Latest_Pipeline:$PYTHONPATH"
+
+srun -n1 shifter python -u /pscratch/sd/s/sdough/Neuron_Latest_Pipeline/Biologically_grounded_architecture/inference.py \
+    --modelPath $MODEL_PATH \
+    --checkpoint_dir $CHECKPOINT_PATH \
+    --outPath $OUTPUT_CSV \
+    --cellName $CELL_NAME
+
+echo "Done inference."
+echo "End: $(date)"
